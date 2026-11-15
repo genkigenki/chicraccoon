@@ -435,10 +435,16 @@ html { scroll-padding-top: 76px; scroll-behavior: smooth; }
     main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
     .sheet, .paper { box-shadow: none !important; }
     /* single page */
-    body.print-page .viewer { display: block; }
+    /* single page: no frame, as large as possible, centred on the sheet */
+    body.print-page main > *:not(.viewer) { display: none !important; }
+    body.print-page .viewer {
+        display: flex !important; align-items: center; justify-content: center;
+        height: 99.5vh; overflow: hidden; break-inside: avoid;
+    }
     body.print-page .viewer .page {
-        width: 180mm !important; height: 210mm !important; margin: 0 auto;
-        border: 0.3mm solid #999; box-shadow: none;
+        height: auto !important; width: min(100vw, calc(99.5vh * 6 / 7)) !important;
+        aspect-ratio: 6 / 7; margin: 0 !important;
+        border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
     }
     /* book overview: 3 x 4 pages per A4 sheet */
     body.print-book main > *:not(.print-sheets) { display: none !important; }
