@@ -410,7 +410,7 @@ class LocalNotebook:
         valid = lambda pages, data: [p for p in pages if p in data]
         env.globals['stats'] = [
             {'id': 'notebooks', 'label': t['notebooks'],
-             'count': len(self.d['notebooks'])},
+             'count': len(self.d['notebooks']), 'href': 'all_notebooks.html'},
             {'id': 'todos', 'label': t['todos'], 'count': len(self.d['todos']),
              'href': 'all_todos.html'},
             {'id': 'schedules', 'label': t['schedules'], 'href': 'all_schedules.html',
