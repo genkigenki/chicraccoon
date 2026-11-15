@@ -5,6 +5,7 @@
         <div>
             <h1>{{ title }}</h1>
             <p class="muted">{{ pages|length }} {{ t.pages }}{% if date %} · {{ t.latest }}: {{ date }}{% endif %}</p>
+            {% if pages %}<button type="button" class="chip print-btn" data-print="book"><span aria-hidden="true">🖨</span> {{ t.print_book }}</button>{% endif %}
             {% if summary %}<p class="summary">{{ summary }}</p>{% endif %}
         </div>
     </section>
@@ -31,4 +32,23 @@
     {% else %}
     <p class="empty">{{ t.empty }}</p>
     {% endif %}
+
+    {# print-only: the whole book, 3 x 4 pages per sheet (images load when printing) #}
+    <div class="print-sheets" aria-hidden="true">
+        {% for chunk in pages|batch(12) %}
+        <section class="print-sheet">
+            <h3>{{ title }} · {{ t.page }} {{ chunk[0].num }}–{{ chunk[-1].num }} / {{ pages|length }}</h3>
+            <div class="print-grid">
+                {% for p in chunk %}
+                <figure>
+                    <span class="paper sheet">
+                        {% for l in p.full %}<img class="layer {{ l.cls }}" data-src="{{ base_dir }}{{ l.src }}" alt="">{% endfor %}
+                    </span>
+                    <figcaption>{{ p.num }}</figcaption>
+                </figure>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
 {% endblock %}

@@ -31,6 +31,7 @@
         <span class="label">{{ label }}</span>
         <span class="progress" aria-hidden="true"><span style="width: {{ '%.1f'|format(progress) }}%"></span></span>
         <label class="toggle"><input type="checkbox" class="form-toggle" checked> {{ t.show_form }}</label>
+        <button type="button" class="chip print-btn" data-print="page"><span aria-hidden="true">🖨</span> {{ t.print_page }}</button>
         <span class="hint muted">{{ t['keys'] }}</span>
     </div>
 {% endblock %}

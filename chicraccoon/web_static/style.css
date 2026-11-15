@@ -424,3 +424,30 @@ html { scroll-padding-top: 76px; scroll-behavior: smooth; }
 @media (max-width: 640px) {
     .all-notebooks .doc-pages { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
+
+/* printing */
+.print-sheets { display: none; }
+.book-head .print-btn { margin-top: 8px; font-size: 13px; }
+@media print {
+    @page { size: A4 portrait; margin: 10mm; }
+    html, body { background: #fff !important; }
+    .topbar, .pager, .nav, .print-btn, .hint { display: none !important; }
+    main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+    .sheet, .paper { box-shadow: none !important; }
+    /* single page */
+    body.print-page .viewer { display: block; }
+    body.print-page .viewer .page {
+        width: 180mm !important; height: 210mm !important; margin: 0 auto;
+        border: 0.3mm solid #999; box-shadow: none;
+    }
+    /* book overview: 3 x 4 pages per A4 sheet */
+    body.print-book main > *:not(.print-sheets) { display: none !important; }
+    body.print-book .print-sheets { display: block; }
+    .print-sheet { break-after: page; }
+    .print-sheet:last-child { break-after: auto; }
+    .print-sheet h3 { font: 600 11pt system-ui, sans-serif; margin: 0 0 4mm; }
+    .print-grid { display: grid; grid-template-columns: repeat(3, 49mm); gap: 2mm 8mm; justify-content: center; }
+    .print-grid figure { margin: 0; break-inside: avoid; }
+    .print-grid .sheet { width: 49mm; height: 57mm; border: 0.3mm solid #999; }
+    .print-grid figcaption { font: 8pt system-ui, sans-serif; text-align: center; color: #555; }
+}

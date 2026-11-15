@@ -97,6 +97,26 @@
             if (txt) txt.textContent = shown ? shown + ' ★' : '';
         }
     };
+    /* print buttons: one page, or the whole book as 3x4 overview sheets */
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-print]');
+        if (!b) return;
+        var mode = b.getAttribute('data-print');
+        document.body.classList.add('print-' + mode);
+        var go = function () { setTimeout(function () { window.print(); }, 60); };
+        var imgs = document.querySelectorAll('.print-sheets img[data-src]');
+        if (mode !== 'book' || !imgs.length) return go();
+        var left = imgs.length;
+        imgs.forEach(function (im) {
+            im.onload = im.onerror = function () { if (--left === 0) go(); };
+            im.src = im.getAttribute('data-src');
+            im.removeAttribute('data-src');
+        });
+    });
+    window.addEventListener('afterprint', function () {
+        document.body.classList.remove('print-page', 'print-book');
+    });
+
     /* Shift+click on a star sets/clears every star between it and the
        previously clicked one (like ticking a range of books) */
     var lastStar = null;
