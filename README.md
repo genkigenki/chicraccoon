@@ -18,6 +18,18 @@ Chicraccoon has been developed with the WG-S30 model in mind and only tested wit
 
 - `chicraccoon_sync` is a utility that can maintain a local copy of your electronic notebook's state. You give it a backup, and it copies & converts all the files to a folder on your computer and creates a bunch of HTML files that let you navigate your notes from a computer ([screenshots](sync_screenshots)). After an initial synchronization, all further synchronizations will only update files that were changed in the new backup.
 
+### This fork: WG-PN1 support and a new web view
+
+This fork adds support for the **Sharp WG-PN1** (firmware 1.50: ToDo lists and handwritten page tags) and a redesigned web view:
+
+```
+chicraccoon_sync [--lang en|de] <output-folder> <path/to/enote.bkup>
+```
+
+- Open `<output-folder>/index.html` in any browser (works straight from disk). Notebooks, ToDo lists and calendars are shown as cards; pages open in a viewer with ←/→ keys, swipe, and a "show lines" toggle. Light/dark theme follows the system and can be toggled.
+- `--lang de` switches the pages to German.
+- **Owners** (for shared devices): put an `owners.json` like `{"people": ["Anna", "Ben"], "owners": {}}` into the output folder, or type the names under "People & saving" on the home page. Assign each book with its drop-down, or tick several cards (Shift+click ticks a range) and assign them at once, then filter by person. Assignments are remembered in the browser; "Download owners.json" and saving it into the output folder makes them permanent.
+
 ## Programming interfaces
 
 - `EnoteBackup` is a class that operates on `.bkup` files. It can open one, list the files contained in it and extract them. There's a function that attempts to replace a file, but it currently doesn't work as the resulting backups fail some validity check on the notebook.
