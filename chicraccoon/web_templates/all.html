@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block body %}
+    <section class="book-head">
+        <div>
+            <h1>{{ title }}</h1>
+            <p class="muted">{{ docs|length }} · {{ total }} {{ t.pages }}</p>
+        </div>
+        <label class="toggle all-toggle"><input type="checkbox" class="form-toggle" checked> {{ t.show_form }}</label>
+    </section>
+
+    {# quick jump to each document #}
+    <nav class="doc-jump" aria-label="{{ title }}">
+        {% for d in docs %}<a class="chip" href="#{{ d.key }}">{{ d.title }}</a>{% endfor %}
+    </nav>
+
+    {% for d in docs %}
+    {% if not loop.first %}<hr class="doc-sep">{% endif %}
+    <section class="doc kind-{{ d.kind }}" id="{{ d.key }}">
+        <header class="doc-head">
+            {% if d.cover %}<a class="paper cover small" href="{{ d.link }}"><img src="{{ d.cover }}" alt="" loading="lazy"></a>{% endif %}
+            <div>
+                <h2><a href="{{ d.link }}">{{ d.title }}</a></h2>
+                <p class="muted">{{ d.subtitle }}{% if d.date %} · {{ d.date }}{% endif %}</p>
+            </div>
+        </header>
+        <div class="doc-pages">
+            {% for p in d.pages %}
+            <figure class="doc-page">
+                <a class="paper sheet" href="{{ p.link }}">
+                    {% for l in p.layers %}
+                    <img class="layer {{ l.cls }}" src="{{ l.src }}" alt="" loading="lazy">
+                    {% endfor %}
+                </a>
+                <figcaption>
+                    <span class="muted">{{ p.label }}</span>
+                    <button type="button" class="star" data-page="{{ p.key }}" title="{{ t.favorite }}" aria-label="{{ t.favorite }}: {{ d.title }}, {{ p.label }}" aria-pressed="false">★</button>
+                </figcaption>
+            </figure>
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+    {% if not docs %}<p class="empty">{{ t.empty }}</p>{% endif %}
+{% endblock %}

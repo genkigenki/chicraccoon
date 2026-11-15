@@ -25,7 +25,7 @@
         </nav>
         <nav class="top-stats" aria-label="{{ t.app }}">
             {% for s in stats %}
-            {% if s.id %}<a class="stat" href="{{ base_dir }}index.html#{{ s.id }}"><b>{{ s.count }}</b> {{ s.label }}</a>{% else %}<span class="stat"><b>{{ s.count }}</b> {{ s.label }}</span>{% endif %}
+            {% if s.id %}<a class="stat" href="{{ base_dir }}{{ s.href or ('index.html#' ~ s.id) }}"><b>{{ s.count }}</b> {{ s.label }}</a>{% else %}<span class="stat"><b>{{ s.count }}</b> {{ s.label }}</span>{% endif %}
             {% endfor %}
         </nav>
         <a class="fav-link{% if kind == 'favorites' %} active{% endif %}" href="{{ base_dir }}favorites.html" title="{{ t.favorites }}"><span aria-hidden="true">★</span> <span class="fav-count"></span><span class="sr-only">{{ t.favorites }}</span></a>

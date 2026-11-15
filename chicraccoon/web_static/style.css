@@ -383,3 +383,21 @@ html { scroll-padding-top: 76px; scroll-behavior: smooth; }
 .fav-count:empty { display: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 1000px) { .theme-toggle { margin-left: 0; } .fav-link { margin-left: auto; } }
+
+/* all documents of one kind on one page */
+.shelf h2 a:not(.chip):hover { color: var(--accent); }
+.all-link { margin-left: auto; font-size: 13px; font-weight: 600; }
+.all-toggle { margin-left: auto; font-size: 14px; }
+.doc-jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; }
+.doc-jump .chip { font-size: 13px; }
+.doc { scroll-margin-top: 80px; }
+.doc-head { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; }
+.doc-head h2 { margin: 0; font-size: 20px; }
+.doc-head p { margin: 2px 0 0; font-size: 14px; }
+.doc-head .paper.cover.small { width: 64px; }
+.doc-pages { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); }
+.doc-page { margin: 0; }
+.doc-page .sheet { border: 1px solid var(--paper-edge); border-radius: 6px; box-shadow: var(--shadow); }
+.doc-page figcaption { display: flex; justify-content: space-between; align-items: center; padding: 6px 2px 0; font-size: 13px; }
+.doc-page .star { position: static; }
+.doc-sep { border: 0; border-top: 2px dashed var(--line); margin: 34px 0; }

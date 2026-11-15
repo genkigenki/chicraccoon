@@ -39,7 +39,8 @@
     {% for s in sections %}
     {% if s.entries %}
     <section class="shelf" id="{{ s.id }}">
-        <h2>{{ s.title }} <span class="count">{{ s.entries|length }}</span></h2>
+        <h2><a href="all_{{ s.id }}.html">{{ s.title }}</a> <span class="count">{{ s.entries|length }}</span>
+            <a class="chip all-link" href="all_{{ s.id }}.html"><span aria-hidden="true">▤</span> {{ t.show_all }}</a></h2>
         <div class="grid covers">
             {% for it in s.entries %}
             <div class="card cover-card" data-key="{{ it.key }}" data-pages="{{ it.count }}">

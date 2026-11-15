@@ -25,7 +25,7 @@ STRINGS = {
         'page': 'Page', 'home': 'Home', 'prev': 'Previous page',
         'next': 'Next page', 'theme': 'Switch light/dark',
         'show_form': 'Show lines', 'keys': 'Use ← → or swipe',
-        'latest': 'Last change', 'today': 'Today', 'done': 'done',
+        'show_all': 'All on one page', 'latest': 'Last change', 'today': 'Today', 'done': 'done',
         'weekdays': ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
         'months': ['January', 'February', 'March', 'April', 'May', 'June',
                    'July', 'August', 'September', 'October', 'November',
@@ -54,7 +54,7 @@ STRINGS = {
         'next': 'Nächste Seite', 'theme': 'Hell/Dunkel umschalten',
         'show_form': 'Linien zeigen',
         'keys': 'Mit ← → oder Wischen blättern',
-        'latest': 'Zuletzt geändert', 'today': 'Heute', 'done': 'erledigt',
+        'show_all': 'Alle auf einer Seite', 'latest': 'Zuletzt geändert', 'today': 'Heute', 'done': 'erledigt',
         'weekdays': ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
         'months': ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
                    'Juli', 'August', 'September', 'Oktober', 'November',
@@ -411,8 +411,9 @@ class LocalNotebook:
         env.globals['stats'] = [
             {'id': 'notebooks', 'label': t['notebooks'],
              'count': len(self.d['notebooks'])},
-            {'id': 'todos', 'label': t['todos'], 'count': len(self.d['todos'])},
-            {'id': 'schedules', 'label': t['schedules'],
+            {'id': 'todos', 'label': t['todos'], 'count': len(self.d['todos']),
+             'href': 'all_todos.html'},
+            {'id': 'schedules', 'label': t['schedules'], 'href': 'all_schedules.html',
              'count': sum(1 for x in self.d['schedules'].values()
                           if valid(x['pages'], self.d['sch_pages']))},
             {'id': None, 'label': t['pages'],
@@ -465,7 +466,8 @@ class LocalNotebook:
                       next_link=page_fn(page_ids[i + 1], id_)
                           if i < len(page_ids) - 1 else None)
                 pages.append({'layers': thumbs, 'link': page_fn(page_id, id_),
-                              'num': i + 1, 'badge': badge, 'key': key})
+                              'num': i + 1, 'badge': badge, 'key': key,
+                              'full': layers, 'label': label})
 
             write(os.path.join(dirname(id_), 'index.html'), book_template,
                   base_dir='../', kind=kind, title=title,
@@ -476,7 +478,10 @@ class LocalNotebook:
                     'key': dirname(id_), 'cover': cover, 'title': title,
                     'subtitle': '{} {}'.format(len(pages), t['pages']),
                     'date': fmt_date(modified), 'sort': modified or 0,
-                    'count': len(pages)}
+                    'count': len(pages), 'kind': kind,
+                    'pages': [{'layers': p['full'], 'link': p['link'],
+                               'label': p['label'], 'key': p['key']}
+                              for p in pages]}
 
         # notebooks and ToDo books
         notebooks = []
@@ -594,7 +599,11 @@ class LocalNotebook:
                 'subtitle': date_range,
                 'date': fmt_date(schedule.get('modified')),
                 'sort': schedule.get('modified') or 0,
-                'count': touched})
+                'count': touched, 'kind': 'schedule',
+                # only pages with writing on them
+                'pages': [{'layers': f['layers'], 'link': f['link'],
+                           'label': f['label'], 'key': f['key']}
+                          for f in filled]})
 
         # index page: most recently changed first
         sections = []
@@ -611,6 +620,18 @@ class LocalNotebook:
               sections=sections,
               total_pages=sum(x['count'] for x in notebooks + todos),
               latest=fmt_date(latest), owners_json=owners_json)
+
+        # "all on one page": every document of a kind below each other
+        all_template = env.get_template('all.html')
+        for key, items in (('notebooks', notebooks), ('todos', todos),
+                           ('schedules', schedules)):
+            write('all_{}.html'.format(key), all_template,
+                  base_dir='', kind='all', title=t[key],
+                  crumbs=[{'label': t[key], 'link': 'index.html#' + key},
+                          {'label': t['show_all']}],
+                  up_link='index.html#' + key,
+                  docs=[x for x in items if x['pages']],
+                  total=sum(len(x['pages']) for x in items))
 
         # favourites: all pages are listed, the browser shows the starred ones
         write('favorites.html', env.get_template('favorites.html'),
