@@ -9,7 +9,6 @@
     <section class="owners card" id="owners">
         <div class="filters" role="group" aria-label="{{ t.owner }}">
             <button type="button" class="chip filter active" data-filter="">{{ t.all }}</button>
-            <button type="button" class="chip filter fav-filter" data-filter="*">★ {{ t.favorites }}</button>
             <span class="people-chips"></span>
             <button type="button" class="chip filter" data-filter="-">{{ t.unassigned }}</button>
         </div>
@@ -45,7 +44,6 @@
             {% for it in s.entries %}
             <div class="card cover-card" data-key="{{ it.key }}" data-pages="{{ it.count }}">
                 <label class="pick" title="{{ t.select_hint }}"><input type="checkbox" class="pick-box" aria-label="{{ t.select }}: {{ it.title }}"><span aria-hidden="true">✓</span></label>
-                <button type="button" class="star" title="{{ t.favorite }}" aria-label="{{ t.favorite }}: {{ it.title }}" aria-pressed="false">★</button>
                 <a class="cover-link" href="{{ it.link }}">
                     {% if it.cover %}<span class="paper cover"><img src="{{ it.cover }}" alt="" loading="lazy"></span>{% else %}<span class="paper cover placeholder"><span>{{ it.title }}</span></span>{% endif %}
                     <span class="meta">

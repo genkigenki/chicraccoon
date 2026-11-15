@@ -66,17 +66,66 @@
     var today = document.getElementById('day_' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()));
     if (today) today.classList.add('today');
 
+    /* favourite pages: star on thumbnails and in the viewer, listed on
+       favorites.html; kept in the browser, baked in via owners.json */
+    var favDefault = [];
+    try { favDefault = JSON.parse(document.getElementById('fav-data').textContent) || []; } catch (e) {}
+    var getFavs = function () {
+        try {
+            var s = store('chicraccoon-favs');
+            return s ? JSON.parse(s) : favDefault.slice();
+        } catch (e) { return favDefault.slice(); }
+    };
+    var paintFavs = function () {
+        var favs = getFavs();
+        document.querySelectorAll('.star[data-page]').forEach(function (b) {
+            b.setAttribute('aria-pressed', favs.indexOf(b.getAttribute('data-page')) >= 0 ? 'true' : 'false');
+        });
+        var count = document.querySelector('.fav-count');
+        if (count) count.textContent = favs.length || '';
+        var items = document.querySelectorAll('.fav-item');
+        if (items.length) {
+            var shown = 0;
+            items.forEach(function (el) {
+                var on = favs.indexOf(el.getAttribute('data-page')) >= 0;
+                el.hidden = !on;
+                if (on) shown++;
+            });
+            var empty = document.querySelector('.fav-empty');
+            if (empty) empty.hidden = shown > 0;
+            var txt = document.querySelector('.fav-count-text');
+            if (txt) txt.textContent = shown ? shown + ' ★' : '';
+        }
+    };
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('.star[data-page]');
+        if (!b) return;
+        e.preventDefault();
+        var favs = getFavs(), key = b.getAttribute('data-page');
+        var i = favs.indexOf(key);
+        if (i >= 0) favs.splice(i, 1); else favs.push(key);
+        store('chicraccoon-favs', JSON.stringify(favs));
+        /* on the favourites page, keep an un-starred page visible until reload */
+        if (document.querySelector('.fav-item')) {
+            b.setAttribute('aria-pressed', i >= 0 ? 'false' : 'true');
+            var c = document.querySelector('.fav-count');
+            if (c) c.textContent = favs.length || '';
+        } else {
+            paintFavs();
+        }
+    });
+    paintFavs();
+
     /* owners: who does each book belong to? */
     var dataEl = document.getElementById('owners-data');
     if (!dataEl) return;
-    var data = { people: [], owners: {}, favorites: [] };
+    var data = { people: [], owners: {} };
     try { data = Object.assign(data, JSON.parse(dataEl.textContent)); } catch (e) {}
     try {
         var saved = JSON.parse(store('chicraccoon-owners') || 'null');
         if (saved) {
             if (saved.people && saved.people.length) data.people = saved.people;
             data.owners = Object.assign({}, data.owners, saved.owners || {});
-            if (saved.favorites) data.favorites = saved.favorites;
         }
     } catch (e) {}
 
@@ -94,13 +143,12 @@
     var noneLabel = summaryEl.getAttribute('data-none');
 
     function save() {
-        store('chicraccoon-owners', JSON.stringify(
-            { people: data.people, owners: data.owners, favorites: data.favorites }));
+        store('chicraccoon-owners', JSON.stringify({ people: data.people, owners: data.owners }));
     }
 
     function render() {
         document.body.classList.toggle('no-people', data.people.length === 0);
-        if (data.people.indexOf(filter) < 0 && filter !== '-' && filter !== '*') filter = '';
+        if (data.people.indexOf(filter) < 0 && filter !== '-') filter = '';
         chipsEl.innerHTML = '';
         data.people.forEach(function (p) {
             var b = document.createElement('button');
@@ -132,11 +180,7 @@
             });
             sel.classList.toggle('set', !!owner);
             sel.style.setProperty('--owner-color', colorOf(owner) || 'var(--accent)');
-            var fav = data.favorites.indexOf(key) >= 0;
-            var star = card.querySelector('.star');
-            if (star) star.setAttribute('aria-pressed', fav ? 'true' : 'false');
-            var visible = !filter || (filter === '*' ? fav :
-                                      filter === '-' ? !owner : owner === filter);
+            var visible = !filter || (filter === '-' ? !owner : owner === filter);
             card.classList.toggle('hidden', !visible);
             var s = stats[owner || '-'] = stats[owner || '-'] || { books: 0, pages: 0 };
             s.books += 1;
@@ -166,16 +210,6 @@
             render();
         }
     });
-    document.addEventListener('click', function (e) {
-        var star = e.target.closest('.star');
-        if (!star) return;
-        var key = star.closest('.cover-card').getAttribute('data-key');
-        var i = data.favorites.indexOf(key);
-        if (i >= 0) data.favorites.splice(i, 1);
-        else data.favorites.push(key);
-        save();
-        render();
-    });
     document.addEventListener('change', function (e) {
         if (!e.target.classList.contains('owner-select')) return;
         var key = e.target.closest('.cover-card').getAttribute('data-key');
@@ -196,7 +230,7 @@
     if (saveBtn) {
         saveBtn.addEventListener('click', function () {
             var blob = new Blob([JSON.stringify(
-                { people: data.people, owners: data.owners, favorites: data.favorites }, null, 2)],
+                { people: data.people, owners: data.owners, favorites: getFavs() }, null, 2)],
                                 { type: 'application/json' });
             var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);

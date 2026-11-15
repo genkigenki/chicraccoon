@@ -12,14 +12,17 @@
         <h2>{{ t.filled_pages }} <span class="count">{{ filled|length }}</span></h2>
         <div class="grid thumbs">
             {% for p in filled %}
-            <a class="card thumb-card" href="{{ base_dir }}{{ p.link }}">
-                <span class="paper sheet">
-                    {% for l in p.layers %}
-                    <img class="layer {{ l.cls }}" src="{{ base_dir }}{{ l.src }}" alt="" loading="lazy">
-                    {% endfor %}
-                </span>
-                <span class="meta"><span class="num">{{ p.label }}</span></span>
-            </a>
+            <div class="thumb-wrap">
+                <a class="card thumb-card" href="{{ base_dir }}{{ p.link }}">
+                    <span class="paper sheet">
+                        {% for l in p.layers %}
+                        <img class="layer {{ l.cls }}" src="{{ base_dir }}{{ l.src }}" alt="" loading="lazy">
+                        {% endfor %}
+                    </span>
+                    <span class="meta"><span class="num">{{ p.label }}</span></span>
+                </a>
+                <button type="button" class="star" data-page="{{ p.key }}" title="{{ t.favorite }}" aria-label="{{ t.favorite }}: {{ p.label }}" aria-pressed="false">★</button>
+            </div>
             {% endfor %}
         </div>
     </section>

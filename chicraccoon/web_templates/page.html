@@ -27,6 +27,7 @@
     </div>
 
     <div class="pager">
+        <button type="button" class="star big" data-page="{{ key }}" title="{{ t.favorite }}" aria-label="{{ t.favorite }}" aria-pressed="false">★</button>
         <span class="label">{{ label }}</span>
         <span class="progress" aria-hidden="true"><span style="width: {{ '%.1f'|format(progress) }}%"></span></span>
         <label class="toggle"><input type="checkbox" class="form-toggle" checked> {{ t.show_form }}</label>

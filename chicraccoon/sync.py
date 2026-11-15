@@ -18,7 +18,8 @@ from chicraccoon.enotebackup import EnoteBackup
 STRINGS = {
     'en': {
         'lang': 'en', 'app': 'My eNote', 'back': 'Back', 'filled_pages': 'Filled pages',
-        'favorite': 'Favourite', 'favorites': 'Favourites', 'notebooks': 'Notebooks',
+        'favorite': 'Favourite', 'favorites': 'Favourites',
+        'no_favorites': 'No starred pages yet. Open a page and tap the star.', 'notebooks': 'Notebooks',
         'notebook': 'Notebook', 'todos': 'ToDo lists', 'todo': 'ToDo list',
         'schedules': 'Calendars', 'schedule': 'Calendar', 'pages': 'pages',
         'page': 'Page', 'home': 'Home', 'prev': 'Previous page',
@@ -44,7 +45,9 @@ STRINGS = {
     'de': {
         'lang': 'de', 'app': 'Mein eNote', 'back': 'Zurück',
         'filled_pages': 'Ausgefüllte Seiten',
-        'favorite': 'Favorit', 'favorites': 'Favoriten', 'notebooks': 'Hefte',
+        'favorite': 'Favorit', 'favorites': 'Favoriten',
+        'no_favorites': 'Noch keine Seiten mit Stern. Eine Seite öffnen '
+                        'und auf den Stern tippen.', 'notebooks': 'Hefte',
         'notebook': 'Heft', 'todos': 'ToDo-Listen', 'todo': 'ToDo-Liste',
         'schedules': 'Kalender', 'schedule': 'Kalender', 'pages': 'Seiten',
         'page': 'Seite', 'home': 'Start', 'prev': 'Vorherige Seite',
@@ -390,6 +393,20 @@ class LocalNotebook:
             lstrip_blocks=True
         )
         env.globals['t'] = t
+
+        # optional owners.json in the output folder: {"people": [...],
+        # "owners": {"n003": "Anna", ...}, "favorites": ["n003/p000042", ...]};
+        # editable from the web pages
+        owners = {'people': [], 'owners': {}, 'favorites': []}
+        if os.path.exists(self._path('owners.json')):
+            with open(self._path('owners.json'), encoding='utf-8') as f:
+                owners.update(json.load(f))
+        to_json = lambda x: json.dumps(x, ensure_ascii=False).replace(
+            '</', '<\\/')
+        env.globals['favorites_json'] = to_json(owners['favorites'])
+        page_key = lambda link: link[:-len('.html')]
+        all_pages = []  # every page, for the favourites view
+
         valid = lambda pages, data: [p for p in pages if p in data]
         env.globals['stats'] = [
             {'id': 'notebooks', 'label': t['notebooks'],
@@ -434,8 +451,12 @@ class LocalNotebook:
                         badge = '✓ {}'.format(done)
 
                 label = '{} {} / {}'.format(t['page'], i + 1, len(page_ids))
+                key = page_key(page_fn(page_id, id_))
+                all_pages.append({'key': key, 'link': page_fn(page_id, id_),
+                                  'layers': thumbs, 'book': title,
+                                  'label': label, 'kind': kind})
                 write(page_fn(page_id, id_), page_template,
-                      base_dir='../', kind=kind, title=title,
+                      base_dir='../', kind=kind, title=title, key=key,
                       crumbs=crumbs + [{'label': label}], up_link='index.html',
                       layers=layers, label=label,
                       progress=100.0 * (i + 1) / len(page_ids),
@@ -444,7 +465,7 @@ class LocalNotebook:
                       next_link=page_fn(page_ids[i + 1], id_)
                           if i < len(page_ids) - 1 else None)
                 pages.append({'layers': thumbs, 'link': page_fn(page_id, id_),
-                              'num': i + 1, 'badge': badge})
+                              'num': i + 1, 'badge': badge, 'key': key})
 
             write(os.path.join(dirname(id_), 'index.html'), book_template,
                   base_dir='../', kind=kind, title=title,
@@ -536,13 +557,18 @@ class LocalNotebook:
                 layers = layer_list([sch_form_filename(page_id, id_)] + ink)
                 label = '{} – {}'.format(fmt_date(page['start_date']),
                                               fmt_date(page['end_date']))
+                key = page_key(sch_page_filename(page_id, id_))
                 if ink:
                     # calendar pages have no thumbnails: reuse full images
                     filled.append({'layers': layers, 'label': label,
                                    'link': sch_page_filename(page_id, id_),
-                                   'sort': page['start_date']})
+                                   'sort': page['start_date'], 'key': key})
+                    all_pages.append({'key': key, 'layers': layers,
+                                      'link': sch_page_filename(page_id, id_),
+                                      'book': title, 'label': label,
+                                      'kind': 'schedule'})
                 write(sch_page_filename(page_id, id_), page_template,
-                      base_dir='../', kind='schedule', title=title,
+                      base_dir='../', kind='schedule', title=title, key=key,
                       crumbs=crumbs + [{'label': label}], up_link='index.html',
                       layers=layers, label=label,
                       progress=100.0 * (i + 1) / len(page_objects),
@@ -578,20 +604,19 @@ class LocalNotebook:
             sections.append({'id': key, 'title': t[key], 'entries': items})
         latest = max([x['sort'] for s in sections for x in s['entries']] or [0])
 
-        # optional owners.json in the output folder: {"people": [...],
-        # "owners": {"n003": "Anna", ...}}; editable from the index page
-        owners = {'people': [], 'owners': {}, 'favorites': []}
-        if os.path.exists(self._path('owners.json')):
-            with open(self._path('owners.json'), encoding='utf-8') as f:
-                owners.update(json.load(f))
-        owners_json = json.dumps(owners, ensure_ascii=False).replace(
-            '</', '<\\/')
+        owners_json = to_json(owners)
         write('index.html', env.get_template('index.html'),
               base_dir='', kind='home', title=t['app'], crumbs=[],
               up_link=None,
               sections=sections,
               total_pages=sum(x['count'] for x in notebooks + todos),
               latest=fmt_date(latest), owners_json=owners_json)
+
+        # favourites: all pages are listed, the browser shows the starred ones
+        write('favorites.html', env.get_template('favorites.html'),
+              base_dir='', kind='favorites', title=t['favorites'],
+              crumbs=[{'label': '★ ' + t['favorites']}],
+              up_link='index.html', pages=all_pages)
 
     def update(self, backup, lang='en'):
         with open(self._path('tmp.sqlite3'), 'wb') as f:

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block body %}
+    <section class="book-head">
+        <div>
+            <h1><span class="fav-title-star" aria-hidden="true">★</span> {{ t.favorites }}</h1>
+            <p class="muted"><span class="fav-count-text"></span></p>
+        </div>
+    </section>
+
+    {# every page is listed; the script shows only the starred ones #}
+    <div class="grid thumbs fav-grid">
+        {% for p in pages %}
+        <div class="thumb-wrap fav-item" data-page="{{ p.key }}" hidden>
+            <a class="card thumb-card" href="{{ p.link }}">
+                <span class="paper sheet kind-{{ p.kind }}">
+                    {% for l in p.layers %}
+                    <img class="layer {{ l.cls }}" src="{{ l.src }}" alt="" loading="lazy">
+                    {% endfor %}
+                </span>
+                <span class="meta fav-meta">
+                    <span class="title">{{ p.book }}</span>
+                    <span class="muted">{{ p.label }}</span>
+                </span>
+            </a>
+            <button type="button" class="star" data-page="{{ p.key }}" title="{{ t.favorite }}" aria-label="{{ t.favorite }}: {{ p.book }}, {{ p.label }}" aria-pressed="true">★</button>
+        </div>
+        {% endfor %}
+    </div>
+    <p class="empty fav-empty" hidden>{{ t.no_favorites }}</p>
+{% endblock %}

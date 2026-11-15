@@ -28,8 +28,10 @@
             {% if s.id %}<a class="stat" href="{{ base_dir }}index.html#{{ s.id }}"><b>{{ s.count }}</b> {{ s.label }}</a>{% else %}<span class="stat"><b>{{ s.count }}</b> {{ s.label }}</span>{% endif %}
             {% endfor %}
         </nav>
+        <a class="fav-link{% if kind == 'favorites' %} active{% endif %}" href="{{ base_dir }}favorites.html" title="{{ t.favorites }}"><span aria-hidden="true">★</span> <span class="fav-count"></span><span class="sr-only">{{ t.favorites }}</span></a>
         <button class="theme-toggle" type="button" title="{{ t.theme }}" aria-label="{{ t.theme }}">◐</button>
     </header>
+    <script id="fav-data" type="application/json">{{ favorites_json|safe }}</script>
     <main>
     {% block body %}{% endblock %}
     </main>
