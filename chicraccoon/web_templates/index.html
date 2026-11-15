@@ -50,6 +50,7 @@
                     <span class="meta">
                         <span class="title">{{ it.title }}</span>
                         <span class="muted">{{ it.subtitle }}{% if it.date %} · {{ it.date }}{% endif %}</span>
+                        {% if it.summary %}<span class="summary" title="{{ it.summary }}">{{ it.summary }}</span>{% endif %}
                     </span>
                 </a>
                 <select class="owner-select" aria-label="{{ t.owner }}"></select>

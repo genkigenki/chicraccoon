@@ -5,6 +5,7 @@
         <div>
             <h1>{{ title }}</h1>
             <p class="muted">{{ pages|length }} {{ t.pages }}{% if date %} · {{ t.latest }}: {{ date }}{% endif %}</p>
+            {% if summary %}<p class="summary">{{ summary }}</p>{% endif %}
         </div>
     </section>
 

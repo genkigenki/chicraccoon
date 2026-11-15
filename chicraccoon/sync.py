@@ -404,6 +404,13 @@ class LocalNotebook:
         to_json = lambda x: json.dumps(x, ensure_ascii=False).replace(
             '</', '<\\/')
         env.globals['favorites_json'] = to_json(owners['favorites'])
+        # optional summaries.json: {"notebooks": {"<id>": "text"}, "todos": ..,
+        # "schedules": ..} - a short note shown under each book
+        summaries = {}
+        if os.path.exists(self._path('summaries.json')):
+            with open(self._path('summaries.json'), encoding='utf-8') as f:
+                summaries = json.load(f)
+        summary = lambda kind, id_: summaries.get(kind, {}).get(str(id_), '')
         page_key = lambda link: link[:-len('.html')]
         all_pages = []  # every page, for the favourites view
 
@@ -471,6 +478,7 @@ class LocalNotebook:
 
             write(os.path.join(dirname(id_), 'index.html'), book_template,
                   base_dir='../', kind=kind, title=title,
+                  summary=summary(kind + 's', id_),
                   crumbs=crumbs[:1] + [{'label': title}],
                   up_link='../index.html#' + kind + 's',
                   cover=cover, pages=pages, date=fmt_date(modified))
@@ -479,6 +487,7 @@ class LocalNotebook:
                     'subtitle': '{} {}'.format(len(pages), t['pages']),
                     'date': fmt_date(modified), 'sort': modified or 0,
                     'count': len(pages), 'kind': kind,
+                    'summary': summary(kind + 's', id_),
                     'pages': [{'layers': p['full'], 'link': p['link'],
                                'label': p['label'], 'key': p['key']}
                               for p in pages]}
@@ -600,6 +609,7 @@ class LocalNotebook:
                 'date': fmt_date(schedule.get('modified')),
                 'sort': schedule.get('modified') or 0,
                 'count': touched, 'kind': 'schedule',
+                'summary': summary('schedules', id_),
                 # only pages with writing on them
                 'pages': [{'layers': f['layers'], 'link': f['link'],
                            'label': f['label'], 'key': f['key']}
@@ -629,7 +639,7 @@ class LocalNotebook:
                   base_dir='', kind='all', title=t[key],
                   crumbs=[{'label': t[key], 'link': 'index.html#' + key},
                           {'label': t['show_all']}],
-                  up_link='index.html#' + key,
+                  up_link='index.html#' + key, section=key,
                   docs=[x for x in items if x['pages']],
                   total=sum(len(x['pages']) for x in items))
 

@@ -15,12 +15,13 @@
 
     {% for d in docs %}
     {% if not loop.first %}<hr class="doc-sep">{% endif %}
-    <section class="doc kind-{{ d.kind }}" id="{{ d.key }}">
+    <section class="doc kind-{{ d.kind }} all-{{ section }}" id="{{ d.key }}">
         <header class="doc-head">
             {% if d.cover %}<a class="paper cover small" href="{{ d.link }}"><img src="{{ d.cover }}" alt="" loading="lazy"></a>{% endif %}
             <div>
                 <h2><a href="{{ d.link }}">{{ d.title }}</a></h2>
                 <p class="muted">{{ d.subtitle }}{% if d.date %} · {{ d.date }}{% endif %}</p>
+                {% if d.summary %}<p class="summary">{{ d.summary }}</p>{% endif %}
             </div>
         </header>
         <div class="doc-pages">

@@ -407,3 +407,20 @@ html { scroll-padding-top: 76px; scroll-behavior: smooth; }
 .doc-page figcaption { display: flex; justify-content: space-between; align-items: center; padding: 6px 2px 0; font-size: 13px; }
 .doc-page .star { position: static; }
 .doc-sep { border: 0; border-top: 2px dashed var(--line); margin: 34px 0; }
+
+/* short per-book summary (summaries.json) */
+.summary { display: block; font-size: 12.5px; line-height: 1.4; color: var(--muted); margin-top: 4px; }
+.cover-card .summary {
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+.doc-head .summary, .book-head .summary { font-size: 14px; max-width: 70ch; }
+/* notebooks: pages at 50 % of the viewer size, as a matrix */
+.all-notebooks .doc-pages {
+    display: grid; justify-content: center; gap: 18px;
+    grid-template-columns: repeat(auto-fill, calc(var(--doc-w) / 2));
+}
+.all-notebooks .doc-page { width: auto; }
+.all-notebooks .doc-head { width: auto; }
+@media (max-width: 640px) {
+    .all-notebooks .doc-pages { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
