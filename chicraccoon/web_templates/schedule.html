@@ -1,52 +1,37 @@
 {% extends "base.html" %}
-{% block viewport_width %}1200{% endblock %}
-{% block title %}Schedule{% endblock %}
 {% block body %}
-    <script>
-        function leftpad(s, n) {
-            return s.toString().padStart(n, '0');
-        }
+    <section class="book-head">
+        <div>
+            <h1>{{ title }}</h1>
+            <p class="muted">{{ range }}</p>
+        </div>
+    </section>
 
-        window.addEventListener('load', function () {
-            var date = new Date();
-            var el_id = ('day_' + leftpad(date.getFullYear(), 4) + '-'
-                         + leftpad(date.getMonth() + 1, 2) + '-'
-                         + leftpad(date.getDate(), 2));
-            var el = document.getElementById(el_id);
-            if (el) {
-                el.className = el.className + " today";
-            }
-        });
-    </script>
-    <a class="back" href="../index.html">⌂ back</a>
-
-    <table class="calendar">
-        <thead>
-            <tr>
-                <td>Mon</td>
-                <td>Tue</td>
-                <td>Wed</td>
-                <td>Thu</td>
-                <td>Fri</td>
-                <td>Sat</td>
-                <td>Sun</td>
-            </tr>
-        </thead>
-        <tbody>
-        {% for week in calendar %}
-            <tr>
-                {% for day in week.days %}
-                    {% if day.touched %}
-                        {% set extraclass = 'touched' %}
-                    {% endif %}
-
-                    <td id='day_{{day.date}}' class='{{extraclass}}'><a href="{{base_dir}}{{day.link}}">{{day.day}}</a></td>
+    <div class="months">
+        {% for month in months %}
+        <section class="card month">
+            <h3>{{ month.name }}</h3>
+            <table class="calendar">
+                <thead>
+                    <tr>{% for wd in t.weekdays %}<th>{{ wd }}</th>{% endfor %}</tr>
+                </thead>
+                <tbody>
+                {% for week in month.weeks %}
+                    <tr>
+                    {% for day in week %}
+                        {% if day is none %}
+                        <td></td>
+                        {% elif day.link %}
+                        <td><a id="day_{{ day.date }}" class="day{% if day.touched %} touched{% endif %}" href="{{ base_dir }}{{ day.link }}">{{ day.day }}</a></td>
+                        {% else %}
+                        <td><span id="day_{{ day.date }}" class="day">{{ day.day }}</span></td>
+                        {% endif %}
+                    {% endfor %}
+                    </tr>
                 {% endfor %}
-                {% if week.month %}
-                    <td class='calendar-month'>{{week.month}}</td>
-                {% endif %}
-            </tr>
+                </tbody>
+            </table>
+        </section>
         {% endfor %}
-    </tbody>
-    </table>
+    </div>
 {% endblock %}

@@ -1,24 +1,67 @@
 {% extends "base.html" %}
-{% block viewport_width %}1200{% endblock %}
-{% block title %}Notebooks{% endblock %}
 {% block body %}
-    <div>
-    {% for sch in schedules %}
-        <a href="{{base_dir}}{{sch.link}}"><img src="{{base_dir}}{{sch.cover}}"></a>
-    {% endfor %}
+    <section class="hero">
+        <h1>{{ t.app }}</h1>
+        <p class="stats">
+            {% for s in sections %}
+            <a class="chip" href="#{{ s.id }}"><b>{{ s.entries|length }}</b> {{ s.title }}</a>
+            {% endfor %}
+            <span class="chip plain"><b>{{ total_pages }}</b> {{ t.pages }}</span>
+        </p>
+        {% if latest %}<p class="muted">{{ t.latest }}: {{ latest }}</p>{% endif %}
+    </section>
+
+    {# owners: who does each book belong to? stored in the browser and in owners.json #}
+    <section class="owners card" id="owners">
+        <div class="filters" role="group" aria-label="{{ t.owner }}">
+            <button type="button" class="chip filter active" data-filter="">{{ t.all }}</button>
+            <span class="people-chips"></span>
+            <button type="button" class="chip filter" data-filter="-">{{ t.unassigned }}</button>
+        </div>
+        <details class="owner-tools">
+            <summary>{{ t.people }}</summary>
+            <label>{{ t.people_hint }}
+                <input type="text" class="people-input" placeholder="Anna, Ben">
+            </label>
+            <button type="button" class="chip save-owners">{{ t.save_owners }}</button>
+            <p class="muted small">{{ t.save_hint }}</p>
+        </details>
+        <p class="owner-summary muted" data-pages="{{ t.pages }}" data-none="{{ t.unassigned }}"></p>
+    </section>
+    <script id="owners-data" type="application/json">{{ owners_json|safe }}</script>
+
+    {# appears when cards are ticked: assign all selected books at once #}
+    <div class="selection-bar card" hidden>
+        <span class="sel-count" data-label="{{ t.selected }}"></span>
+        <label>{{ t.assign_to }}
+            <select class="bulk-owner"></select>
+        </label>
+        <button type="button" class="chip bulk-apply">{{ t.assign }}</button>
+        <button type="button" class="chip bulk-visible">{{ t.select_visible }}</button>
+        <button type="button" class="chip bulk-clear">{{ t.clear_selection }}</button>
+        <span class="muted small">{{ t.select_hint }}</span>
     </div>
-    <hr>
-    <div>
-    {% for nb in notebooks %}
-        <a href="{{base_dir}}{{nb.link}}"><img src="{{base_dir}}{{nb.cover}}"></a>
-    {% endfor %}
-    </div>
-    {% if todos %}
-    <hr>
-    <div>
-    {% for td in todos %}
-        <a href="{{base_dir}}{{td.link}}"><img src="{{base_dir}}{{td.cover}}"></a>
-    {% endfor %}
-    </div>
+
+    {% for s in sections %}
+    {% if s.entries %}
+    <section class="shelf" id="{{ s.id }}">
+        <h2>{{ s.title }} <span class="count">{{ s.entries|length }}</span></h2>
+        <div class="grid covers">
+            {% for it in s.entries %}
+            <div class="card cover-card" data-key="{{ it.key }}" data-pages="{{ it.count }}">
+                <label class="pick" title="{{ t.select_hint }}"><input type="checkbox" class="pick-box" aria-label="{{ t.select }}: {{ it.title }}"><span aria-hidden="true">✓</span></label>
+                <a class="cover-link" href="{{ it.link }}">
+                    {% if it.cover %}<span class="paper cover"><img src="{{ it.cover }}" alt="" loading="lazy"></span>{% else %}<span class="paper cover placeholder"><span>{{ it.title }}</span></span>{% endif %}
+                    <span class="meta">
+                        <span class="title">{{ it.title }}</span>
+                        <span class="muted">{{ it.subtitle }}{% if it.date %} · {{ it.date }}{% endif %}</span>
+                    </span>
+                </a>
+                <select class="owner-select" aria-label="{{ t.owner }}"></select>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
     {% endif %}
+    {% endfor %}
 {% endblock %}

@@ -14,6 +14,63 @@ from PIL import Image
 
 from chicraccoon.enotebackup import EnoteBackup
 
+# UI strings for the generated web pages (select with --lang)
+STRINGS = {
+    'en': {
+        'lang': 'en', 'app': 'My eNote', 'notebooks': 'Notebooks',
+        'notebook': 'Notebook', 'todos': 'ToDo lists', 'todo': 'ToDo list',
+        'schedules': 'Calendars', 'schedule': 'Calendar', 'pages': 'pages',
+        'page': 'Page', 'home': 'Home', 'prev': 'Previous page',
+        'next': 'Next page', 'theme': 'Switch light/dark',
+        'show_form': 'Show lines', 'keys': 'Use ← → or swipe',
+        'latest': 'Last change', 'today': 'Today', 'done': 'done',
+        'weekdays': ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+        'months': ['January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November',
+                   'December'],
+        'date_fmt': '%Y-%m-%d', 'empty': 'Nothing here yet.',
+        'owner': 'Belongs to', 'all': 'All', 'unassigned': 'Unassigned',
+        'people': 'People & saving', 'people_hint': 'Names, comma separated:',
+        'save_owners': 'Download owners.json',
+        'select': 'Select', 'selected': 'selected', 'assign_to': 'Assign to',
+        'assign': 'Assign', 'select_visible': 'Select all shown',
+        'clear_selection': 'Clear selection',
+        'select_hint': 'Tick the corner; Shift+click ticks a whole range.',
+        'save_hint': 'Assignments are kept in this browser. To keep them '
+                     'for good, save owners.json into this folder; it is '
+                     'picked up the next time the pages are generated.',
+    },
+    'de': {
+        'lang': 'de', 'app': 'Mein eNote', 'notebooks': 'Hefte',
+        'notebook': 'Heft', 'todos': 'ToDo-Listen', 'todo': 'ToDo-Liste',
+        'schedules': 'Kalender', 'schedule': 'Kalender', 'pages': 'Seiten',
+        'page': 'Seite', 'home': 'Start', 'prev': 'Vorherige Seite',
+        'next': 'Nächste Seite', 'theme': 'Hell/Dunkel umschalten',
+        'show_form': 'Linien zeigen',
+        'keys': 'Mit ← → oder Wischen blättern',
+        'latest': 'Zuletzt geändert', 'today': 'Heute', 'done': 'erledigt',
+        'weekdays': ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+        'months': ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                   'Juli', 'August', 'September', 'Oktober', 'November',
+                   'Dezember'],
+        'date_fmt': '%d.%m.%Y', 'empty': 'Noch nichts da.',
+        'owner': 'Gehört', 'all': 'Alle', 'unassigned': 'Ohne Zuordnung',
+        'people': 'Personen & Speichern',
+        'people_hint': 'Namen, mit Komma getrennt:',
+        'save_owners': 'owners.json herunterladen',
+        'select': 'Auswählen', 'selected': 'ausgewählt',
+        'assign_to': 'Zuordnen zu', 'assign': 'Zuordnen',
+        'select_visible': 'Alle sichtbaren auswählen',
+        'clear_selection': 'Auswahl aufheben',
+        'select_hint': 'Häkchen oben links; mit Shift+Klick eine ganze '
+                       'Reihe von–bis.',
+        'save_hint': 'Die Zuordnung wird in diesem Browser gemerkt. Damit '
+                     'sie dauerhaft bleibt, owners.json in diesen Ordner '
+                     'speichern – sie wird beim nächsten Erzeugen '
+                     'übernommen.',
+    },
+}
+
 def grayscale_to_mask(image):
     pixels = image.tobytes()
     new_pixels = []
@@ -111,7 +168,8 @@ class LocalNotebook:
                     }
                 elif kind == 'notebooks':
                     self.d[kind][id_] = {
-                        'pages': self.load_page_order(id_, backup) or []
+                        'pages': self.load_page_order(id_, backup) or [],
+                        'modified': obj['modify_date']
                     }
                 elif kind == 'todos':
                     cursor_pages = db.execute(
@@ -128,7 +186,8 @@ class LocalNotebook:
                         pages = ordered + [p for p in pages
                                            if p not in ordered]
                     self.d[kind][id_] = {
-                        'pages': pages
+                        'pages': pages,
+                        'modified': obj['modify_date']
                     }
                 elif kind == 'todo_pages':
                     self.d[kind][id_] = {
@@ -149,7 +208,8 @@ class LocalNotebook:
                     self.d[kind][id_] = {
                         'start_date': obj['start_date'],
                         'end_date': obj['end_date'],
-                        'pages': pages
+                        'pages': pages,
+                        'modified': obj['modify_date']
                     }
                 elif kind == 'sch_pages':
                     self.d[kind][id_] = {
@@ -233,15 +293,23 @@ class LocalNotebook:
         for filename in files_to_delete:
             del self.d['images'][filename]
 
-    def regenerate_web(self):
+    def regenerate_web(self, lang='en'):
+        t = STRINGS.get(lang, STRINGS['en'])
+        to_date = lambda x: datetime.datetime.fromtimestamp(
+            x, datetime.timezone.utc).date()
+        fmt_date = lambda x: to_date(x).strftime(t['date_fmt']) if x else ''
+
         notebook_dirname = lambda x: 'n{:03}'.format(x)
         page_filename = lambda p, n: 'n{:03}/p{:06}.html'.format(n, p)
         notebook_covername = lambda x: 'images/note/n{:07x}_0.png'.format(x)
         schedule_dirname = lambda x: 's{:03}'.format(x)
         sch_page_filename = lambda p, n: 's{:03}/p{:06}.html'.format(n, p)
         schedule_covername = lambda x: 'images/schedule/s{:07x}_0.png'.format(x)
+        todo_dirname = lambda x: 't{:03}'.format(x)
+        todo_page_filename = lambda p, n: 't{:03}/p{:06}.html'.format(n, p)
+        todo_covername = lambda x: 'images/todo/n{:07x}_0.png'.format(x)
         def form_filename(id_, thumb=False):
-            notebook = self.d['forms'][id_]['notebook']
+            notebook = self.d['forms'].get(id_, {}).get('notebook', 0)
             if notebook == -1:
                 # uform
                 return 'images/{thumb}uform/f{id:07x}_0.png'.format(
@@ -259,18 +327,6 @@ class LocalNotebook:
                 thumb='thumbnail/' if thumb else '',
                 tp='t' if thumb else 'p',
                 id=id_, nb=notebook, layer=layer)
-        def sch_form_filename(id_, schedule):
-            return 'images/sch_form/s{sch:06x}/f{id:07x}_0.png'.format(
-                sch=schedule,
-                id=id_)
-        def sch_page_imagename(id_, schedule, layer, thumb=False):
-            return 'images/{thumb}sch_page/s{sch:06x}/{tp}{id:07x}_{layer}.png'.format(
-                thumb='thumbnail/' if thumb else '',
-                tp='t' if thumb else 'p',
-                id=id_, sch=schedule, layer=layer)
-        todo_dirname = lambda x: 't{:03}'.format(x)
-        todo_page_filename = lambda p, n: 't{:03}/p{:06}.html'.format(n, p)
-        todo_covername = lambda x: 'images/todo/n{:07x}_0.png'.format(x)
         def todo_form_filename(id_, thumb=False):
             return 'images/{thumb}todo_form/f{id:07x}_0.png'.format(
                 thumb='todo_thumbnail/' if thumb else '', id=id_)
@@ -279,208 +335,237 @@ class LocalNotebook:
                 thumb='todo_thumbnail/' if thumb else '',
                 tp='t' if thumb else 'p',
                 id=id_, nb=todo, layer=layer)
+        def sch_form_filename(id_, schedule):
+            return 'images/sch_form/s{sch:06x}/f{id:07x}_0.png'.format(
+                sch=schedule, id=id_)
+        def sch_page_imagename(id_, schedule, layer, thumb=False):
+            return 'images/{thumb}sch_page/s{sch:06x}/{tp}{id:07x}_{layer}.png'.format(
+                thumb='thumbnail/' if thumb else '',
+                tp='t' if thumb else 'p',
+                id=id_, sch=schedule, layer=layer)
         def existing_layers(name_for_layer):
             # pages have a varying number of layers (ToDo pages have three)
             layers = []
             while os.path.exists(self._path(name_for_layer(len(layers)))):
                 layers.append(name_for_layer(len(layers)))
             return layers
-
+        def layer_list(paths):
+            # first layer is the form (template), the rest are ink layers
+            return [{'src': p, 'cls': 'form' if i == 0 else 'l{}'.format(i)}
+                    for i, p in enumerate(paths)
+                    if i > 0 or os.path.exists(self._path(p))]
+        def existing_or(path, fallback):
+            return path if os.path.exists(self._path(path)) else fallback
+        def cover_image(path, key):
+            # notebook and calendar covers are stored as light ink on a dark
+            # background (ToDo covers are not); normalize them to dark ink on
+            # a transparent background like the pages. None = no cover.
+            if not os.path.exists(self._path(path)):
+                return None
+            out = 'images/covers/{}.png'.format(key)
+            src = Image.open(self._path(path)).convert('RGBA')
+            alpha = src.getchannel('A').histogram()
+            if sum(alpha[128:]) > sum(alpha[:128]):
+                flat = Image.new('RGBA', src.size, (255, 255, 255, 255))
+                flat.alpha_composite(src)
+                src = Image.new('RGBA', src.size, (0, 0, 0, 255))
+                src.putalpha(flat.convert('L'))
+            self._mkdir('images', 'covers')
+            src.save(self._path(out))
+            return out
 
         # copy over static files
         self._mkdir('static')
-
         static_dir = os.path.join(os.path.dirname(__file__), 'web_static')
         for entry in os.scandir(static_dir):
             shutil.copy(entry.path, self._path('static'))
 
-        # generate HTML
         env = Environment(
             loader=PackageLoader('chicraccoon', 'web_templates'),
             autoescape=select_autoescape(['html']),
             trim_blocks=True,
             lstrip_blocks=True
         )
+        env.globals['t'] = t
+        page_template = env.get_template('page.html')
+        book_template = env.get_template('book.html')
 
-        # generate index page
-        index_template = env.get_template('index.html')
-        notebooks = []
-        for id_ in self.d['notebooks']:
-            cover = notebook_covername(id_)
-            if not os.path.exists(self._path(cover)):
-                cover = 'static/notebook_default.png'
-            notebooks.append({
-                'link': '{}/index.html'.format(notebook_dirname(id_)),
-                'cover': cover
-            })
-        schedules = []
-        for id_ in self.d['schedules']:
-            cover = schedule_covername(id_)
-            if not os.path.exists(self._path(cover)):
-                cover = 'static/schedule_default.png'
-            schedules.append({
-                'link': '{}/index.html'.format(schedule_dirname(id_)),
-                'cover': cover
-            })
-        todos = []
-        for id_ in self.d['todos']:
-            cover = todo_covername(id_)
-            if not os.path.exists(self._path(cover)):
-                cover = 'static/notebook_default.png'
-            todos.append({
-                'link': '{}/index.html'.format(todo_dirname(id_)),
-                'cover': cover
-            })
+        def write(path, template, **kwargs):
+            with open(self._path(path), 'w', encoding='utf-8') as f:
+                f.write(template.render(**kwargs))
 
-        with open(self._path('index.html'), 'w', encoding='utf-8') as f:
-            f.write(index_template.render(
-                notebooks=notebooks,
-                schedules=schedules,
-                todos=todos))
-
-        # generate note and notebook pages
-        notebook_template = env.get_template('notebook.html')
-        page_template = env.get_template('notebook_page.html')
-        def render_book(id_, page_ids, page_data, dirname, page_fn,
-                        form_fn, image_fn):
+        def render_book(kind, id_, title, page_ids, page_data, dirname,
+                        page_fn, form_fn, image_fn, cover, modified):
             self._mkdir(dirname(id_))
             # skip page ids that have no metadata (stale PAGE_ORDER entries)
             page_ids = [p for p in page_ids if p in page_data]
+            crumbs = [{'label': t[kind + 's'],
+                       'link': '../index.html#' + kind + 's'},
+                      {'label': title, 'link': 'index.html'}]
 
             pages = []
             for i, page_id in enumerate(page_ids):
                 page = page_data[page_id]
-                thumb_layers = [form_fn(page['form'], True)]
-                layers = [form_fn(page['form'])]
-                thumb_layers += existing_layers(
-                    lambda l: image_fn(page_id, id_, l, True))
-                layers += existing_layers(
-                    lambda l: image_fn(page_id, id_, l))
+                layers = layer_list([form_fn(page['form'])] + existing_layers(
+                    lambda l: image_fn(page_id, id_, l)))
+                thumbs = layer_list([form_fn(page['form'], True)] +
+                    existing_layers(lambda l: image_fn(page_id, id_, l, True)))
+                badge = None
+                if kind == 'todo':
+                    done = bin((page.get('checked') or 0) & 0x1ff).count('1')
+                    if done:
+                        badge = '✓ {}'.format(done)
 
-                prev_link = None
-                if i != 0:
-                    prev_link = page_fn(page_ids[i - 1], id_)
+                write(page_fn(page_id, id_), page_template,
+                      base_dir='../', kind=kind, title=title,
+                      crumbs=crumbs, layers=layers,
+                      label='{} {} / {}'.format(t['page'], i + 1,
+                                                len(page_ids)),
+                      progress=100.0 * (i + 1) / len(page_ids),
+                      prev_link=page_fn(page_ids[i - 1], id_)
+                          if i > 0 else None,
+                      next_link=page_fn(page_ids[i + 1], id_)
+                          if i < len(page_ids) - 1 else None)
+                pages.append({'layers': thumbs, 'link': page_fn(page_id, id_),
+                              'num': i + 1, 'badge': badge})
 
-                next_link = None
-                if i != len(page_ids) - 1:
-                    next_link = page_fn(page_ids[i + 1], id_)
+            write(os.path.join(dirname(id_), 'index.html'), book_template,
+                  base_dir='../', kind=kind, title=title, crumbs=crumbs[:1],
+                  cover=cover, pages=pages, date=fmt_date(modified))
+            return {'link': '{}/index.html'.format(dirname(id_)),
+                    'key': dirname(id_), 'cover': cover, 'title': title,
+                    'subtitle': '{} {}'.format(len(pages), t['pages']),
+                    'date': fmt_date(modified), 'sort': modified or 0,
+                    'count': len(pages)}
 
-                with open(self._path(page_fn(page_id, id_)), 'w',
-                          encoding='utf-8') as f:
-                    f.write(page_template.render(
-                        layers=layers,
-                        base_dir='../',
-                        page_num=i+1,
-                        pages_total=len(page_ids),
-                        prev_link=prev_link,
-                        next_link=next_link))
+        # notebooks and ToDo books
+        notebooks = []
+        for n, id_ in enumerate(sorted(self.d['notebooks']), 1):
+            nb = self.d['notebooks'][id_]
+            notebooks.append(render_book(
+                'notebook', id_, '{} {}'.format(t['notebook'], n),
+                nb['pages'], self.d['pages'], notebook_dirname,
+                page_filename, form_filename, page_imagename,
+                cover_image(notebook_covername(id_), notebook_dirname(id_)),
+                nb.get('modified')))
+        todos = []
+        for n, id_ in enumerate(sorted(self.d['todos']), 1):
+            td = self.d['todos'][id_]
+            todos.append(render_book(
+                'todo', id_, '{} {}'.format(t['todo'], n),
+                td['pages'], self.d['todo_pages'], todo_dirname,
+                todo_page_filename, todo_form_filename, todo_page_imagename,
+                cover_image(todo_covername(id_), todo_dirname(id_)),
+                td.get('modified')))
 
-                pages.append({'layers': thumb_layers,
-                    'link': page_fn(page_id, id_)})
-
-            with open(self._path(dirname(id_), 'index.html'), 'w',
-                      encoding='utf-8') as f:
-                f.write(notebook_template.render(pages=pages, base_dir='../'))
-
-        for id_, notebook in self.d['notebooks'].items():
-            render_book(id_, notebook['pages'], self.d['pages'],
-                        notebook_dirname, page_filename, form_filename,
-                        page_imagename)
-
-        for id_, todo in self.d['todos'].items():
-            render_book(id_, todo['pages'], self.d['todo_pages'],
-                        todo_dirname, todo_page_filename, todo_form_filename,
-                        todo_page_imagename)
-
-        # generate schedule pages
-        one_day = datetime.timedelta(days=1)
-        parse_date = lambda x: datetime.datetime.fromtimestamp(
-            x, datetime.timezone.utc).date()
+        # schedules: one calendar per schedule, one page per spread
         schedule_template = env.get_template('schedule.html')
-        sch_page_template = env.get_template('schedule_page.html')
-        for id_, schedule in self.d['schedules'].items():
-            self._mkdir(schedule_dirname(id_))
-
-            page_objects = list([(x, self.d['sch_pages'][x])
-                                 for x in schedule['pages']
-                                 if x in self.d['sch_pages']])
+        cal = calendar.Calendar(firstweekday=0)
+        schedules = []
+        for n, id_ in enumerate(sorted(self.d['schedules']), 1):
+            schedule = self.d['schedules'][id_]
+            page_objects = [(x, self.d['sch_pages'][x])
+                            for x in schedule['pages']
+                            if x in self.d['sch_pages']]
             if not page_objects:
                 continue
-            start_date = parse_date(schedule['start_date'])
-            end_date = parse_date(schedule['end_date'])
+            self._mkdir(schedule_dirname(id_))
+            title = '{} {}'.format(t['schedule'], n)
+            crumbs = [{'label': t['schedules'],
+                       'link': '../index.html#schedules'},
+                      {'label': title, 'link': 'index.html'}]
+            start_date = to_date(schedule['start_date'])
+            end_date = to_date(schedule['end_date'])
 
-            calendar = []
-            last_month = -1
-            week = []
-            date = start_date
-            date -= one_day * date.weekday() # go to beginning of the week
-            page = 0
-            while date <= end_date:
-                while (page < len(page_objects) - 1) and \
-                    (date > parse_date(page_objects[page][1]['end_date'])):
-                    page += 1
+            def page_for(day):
+                for page_id, page in page_objects:
+                    if (to_date(page['start_date']) <= day
+                            <= to_date(page['end_date'])):
+                        return page_id, page
+                return None, None
 
-                week.append({
-                    'day': date.day,
-                    'date': date.strftime('%Y-%m-%d'),
-                    'link': sch_page_filename(page_objects[page][0], id_),
-                    'touched': page_objects[page][1]['touched']
-                })
-
-                if date.weekday() == 6:
-                    if last_month != date.month:
-                        calendar.append({
-                            'days': week,
-                            'month': date.strftime('%B %Y')
+            months = []
+            y, m = start_date.year, start_date.month
+            while (y, m) <= (end_date.year, end_date.month):
+                weeks = []
+                for week in cal.monthdatescalendar(y, m):
+                    row = []
+                    for day in week:
+                        if day.month != m or not (start_date <= day <= end_date):
+                            row.append(None)
+                            continue
+                        page_id, page = page_for(day)
+                        row.append({
+                            'day': day.day,
+                            'date': day.isoformat(),
+                            'link': sch_page_filename(page_id, id_)
+                                if page_id else None,
+                            'touched': bool(page and page['touched'])
                         })
-                        last_month = date.month
-                    else:
-                        calendar.append({'days': week})
-                    week = []
+                    weeks.append(row)
+                months.append({'name': '{} {}'.format(t['months'][m - 1], y),
+                               'weeks': weeks})
+                y, m = (y + 1, 1) if m == 12 else (y, m + 1)
 
-                date += one_day
-
-            if len(week) > 0:
-                # the template expects {'days': [...]}, not a bare list
-                calendar.append({'days': week})
-                week = []
-
-            with open(self._path(schedule_dirname(id_), 'index.html'), 'w',
-                      encoding='utf-8') as f:
-                f.write(schedule_template.render(
-                    calendar=calendar,
-                    base_dir='../'))
+            date_range = '{} – {}'.format(
+                fmt_date(schedule['start_date']),
+                fmt_date(schedule['end_date']))
+            write(os.path.join(schedule_dirname(id_), 'index.html'),
+                  schedule_template, base_dir='../', kind='schedule',
+                  title=title, crumbs=crumbs[:1], months=months,
+                  range=date_range)
 
             for i, (page_id, page) in enumerate(page_objects):
-                layers = [sch_form_filename(page_id, id_)]
+                layers = layer_list([sch_form_filename(page_id, id_)] +
+                    existing_layers(
+                        lambda l: sch_page_imagename(page_id, id_, l)))
+                write(sch_page_filename(page_id, id_), page_template,
+                      base_dir='../', kind='schedule', title=title,
+                      crumbs=crumbs, layers=layers,
+                      label='{} – {}'.format(
+                          fmt_date(page['start_date']),
+                          fmt_date(page['end_date'])),
+                      progress=100.0 * (i + 1) / len(page_objects),
+                      prev_link=sch_page_filename(page_objects[i - 1][0], id_)
+                          if i > 0 else None,
+                      next_link=sch_page_filename(page_objects[i + 1][0], id_)
+                          if i < len(page_objects) - 1 else None)
 
-                if os.path.exists(self._path(sch_page_imagename(page_id, id_, 0))):
-                    layers.append(sch_page_imagename(page_id, id_, 0))
-                    layers.append(sch_page_imagename(page_id, id_, 1))
+            touched = sum(1 for _, p in page_objects if p['touched'])
+            schedules.append({
+                'link': '{}/index.html'.format(schedule_dirname(id_)),
+                'key': schedule_dirname(id_),
+                'cover': cover_image(schedule_covername(id_),
+                                     schedule_dirname(id_)),
+                'title': title,
+                'subtitle': date_range,
+                'date': fmt_date(schedule.get('modified')),
+                'sort': schedule.get('modified') or 0,
+                'count': touched})
 
-                prev_link = None
-                if i != 0:
-                    prev_link = sch_page_filename(page_objects[i - 1][0], id_)
+        # index page: most recently changed first
+        sections = []
+        for key, items in (('notebooks', notebooks), ('todos', todos),
+                           ('schedules', schedules)):
+            items.sort(key=lambda x: x['sort'], reverse=True)
+            sections.append({'id': key, 'title': t[key], 'entries': items})
+        latest = max([x['sort'] for s in sections for x in s['entries']] or [0])
 
-                next_link = None
-                if i != len(page_objects) - 1:
-                    next_link = sch_page_filename(page_objects[i + 1][0], id_)
+        # optional owners.json in the output folder: {"people": [...],
+        # "owners": {"n003": "Anna", ...}}; editable from the index page
+        owners = {'people': [], 'owners': {}}
+        if os.path.exists(self._path('owners.json')):
+            with open(self._path('owners.json'), encoding='utf-8') as f:
+                owners.update(json.load(f))
+        owners_json = json.dumps(owners, ensure_ascii=False).replace(
+            '</', '<\\/')
+        write('index.html', env.get_template('index.html'),
+              base_dir='', kind='home', title=t['app'], crumbs=[],
+              sections=sections,
+              total_pages=sum(x['count'] for x in notebooks + todos),
+              latest=fmt_date(latest), owners_json=owners_json)
 
-                start_date = parse_date(page['start_date']).isoformat()
-                end_date = parse_date(page['end_date']).isoformat()
-
-                with open(self._path(sch_page_filename(page_id, id_)), 'w',
-                          encoding='utf-8') as f:
-                    f.write(sch_page_template.render(
-                        base_dir='../',
-                        layers=layers,
-                        prev_link=prev_link,
-                        next_link=next_link,
-                        start_date=start_date,
-                        end_date=end_date))
-
-
-    def update(self, backup):
+    def update(self, backup, lang='en'):
         with open(self._path('tmp.sqlite3'), 'wb') as f:
             f.write(backup.extract_file(backup.find_file('enotes.db3')))
 
@@ -499,20 +584,26 @@ class LocalNotebook:
         os.remove(self._path('tmp.sqlite3'))
 
         self.update_images(backup)
-        self.regenerate_web()
+        self.regenerate_web(lang)
 
 def main():
-    if len(sys.argv) != 3:
+    args = sys.argv[1:]
+    lang = 'en'
+    if '--lang' in args:
+        i = args.index('--lang')
+        lang = args[i + 1] if i + 1 < len(args) else ''
+        del args[i:i + 2]
+    if len(args) != 2 or lang not in STRINGS:
         print('USAGE:')
-        print('{} <notebook-directory> <path/to/enote.bkup>'.format(sys.argv[0]))
+        print('{} [--lang {}] <notebook-directory> <path/to/enote.bkup>'.format(
+            sys.argv[0], '|'.join(STRINGS)))
         return
 
-    notebook_dir = sys.argv[1]
-    backup_path = sys.argv[2]
+    notebook_dir, backup_path = args
 
     with LocalNotebook(notebook_dir) as notebook:
         with EnoteBackup(backup_path) as backup:
-            notebook.update(backup)
+            notebook.update(backup, lang)
 
 if __name__ == '__main__':
     main()

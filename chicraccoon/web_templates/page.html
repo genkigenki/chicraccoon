@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block head %}
+    {% if next_link %}<link rel="prefetch" href="{{ base_dir }}{{ next_link }}">{% endif %}
+{% endblock %}
+{% block body %}
+    <div class="viewer"
+         data-prev="{% if prev_link %}{{ base_dir }}{{ prev_link }}{% endif %}"
+         data-next="{% if next_link %}{{ base_dir }}{{ next_link }}{% endif %}"
+         data-up="index.html">
+        {% if prev_link %}
+        <a class="nav prev" href="{{ base_dir }}{{ prev_link }}" title="{{ t.prev }}" aria-label="{{ t.prev }}">‹</a>
+        {% else %}
+        <span class="nav prev disabled" aria-hidden="true">‹</span>
+        {% endif %}
+
+        <figure class="paper sheet page">
+            {% for l in layers %}
+            <img class="layer {{ l.cls }}" src="{{ base_dir }}{{ l.src }}" alt="">
+            {% endfor %}
+        </figure>
+
+        {% if next_link %}
+        <a class="nav next" href="{{ base_dir }}{{ next_link }}" title="{{ t.next }}" aria-label="{{ t.next }}">›</a>
+        {% else %}
+        <span class="nav next disabled" aria-hidden="true">›</span>
+        {% endif %}
+    </div>
+
+    <div class="pager">
+        <span class="label">{{ label }}</span>
+        <span class="progress" aria-hidden="true"><span style="width: {{ '%.1f'|format(progress) }}%"></span></span>
+        <label class="toggle"><input type="checkbox" class="form-toggle" checked> {{ t.show_form }}</label>
+        <span class="hint muted">{{ t['keys'] }}</span>
+    </div>
+{% endblock %}

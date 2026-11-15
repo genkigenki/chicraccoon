@@ -1,15 +1,29 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ t.lang }}">
 <head>
-    {% block head %}
     <meta charset="utf-8">
-    <meta name="viewport" content="width={% block viewport_width %}{% endblock %}, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if kind != 'home' %}{{ title }} · {% endif %}{{ t.app }}</title>
     <link rel="stylesheet" href="{{ base_dir }}static/style.css">
-    <title>{% block title %}{% endblock %} - Chicraccoon</title>
-    {% endblock %}
+    <script>
+        try { var th = localStorage.getItem('chicraccoon-theme');
+              if (th) document.documentElement.setAttribute('data-theme', th); } catch (e) {}
+    </script>
+    {% block head %}{% endblock %}
 </head>
-<body>
-    {% block body %}
-    {% endblock %}
+<body class="kind-{{ kind }}">
+    <header class="topbar">
+        <a class="brand" href="{{ base_dir }}index.html"><span class="logo" aria-hidden="true">✎</span>{{ t.app }}</a>
+        <nav class="crumbs" aria-label="breadcrumb">
+            {% for c in crumbs %}
+            <span class="sep" aria-hidden="true">›</span><a href="{{ c.link }}">{{ c.label }}</a>
+            {% endfor %}
+        </nav>
+        <button class="theme-toggle" type="button" title="{{ t.theme }}" aria-label="{{ t.theme }}">◐</button>
+    </header>
+    <main>
+    {% block body %}{% endblock %}
+    </main>
+    <script src="{{ base_dir }}static/app.js"></script>
 </body>
 </html>
