@@ -340,3 +340,19 @@ a.day:hover { background: var(--accent-soft); }
 
 /* anchor jumps (#notebooks etc.) land below the sticky top bar */
 html { scroll-padding-top: 76px; scroll-behavior: smooth; }
+
+/* favourite star in the top-right corner of each card */
+.star {
+    position: absolute; top: 8px; right: 8px; z-index: 2;
+    width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+    display: grid; place-items: center; padding: 0 0 2px;
+    font-size: 18px; line-height: 1; color: var(--line);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    border: 1px solid var(--line); box-shadow: var(--shadow);
+    opacity: .6; transition: transform .12s ease, opacity .12s ease, color .12s ease;
+}
+.cover-card:hover .star, .star:focus-visible { opacity: 1; color: var(--muted); }
+.star:hover { transform: scale(1.12); }
+.star[aria-pressed="true"] { opacity: 1; color: #f5b301; border-color: #f5b301; }
+.fav-filter { color: #b98500; }
+.fav-filter.active { background: #f5b301; border-color: #f5b301; color: #1d2433; }

@@ -69,13 +69,14 @@
     /* owners: who does each book belong to? */
     var dataEl = document.getElementById('owners-data');
     if (!dataEl) return;
-    var data = { people: [], owners: {} };
+    var data = { people: [], owners: {}, favorites: [] };
     try { data = Object.assign(data, JSON.parse(dataEl.textContent)); } catch (e) {}
     try {
         var saved = JSON.parse(store('chicraccoon-owners') || 'null');
         if (saved) {
             if (saved.people && saved.people.length) data.people = saved.people;
             data.owners = Object.assign({}, data.owners, saved.owners || {});
+            if (saved.favorites) data.favorites = saved.favorites;
         }
     } catch (e) {}
 
@@ -93,12 +94,13 @@
     var noneLabel = summaryEl.getAttribute('data-none');
 
     function save() {
-        store('chicraccoon-owners', JSON.stringify({ people: data.people, owners: data.owners }));
+        store('chicraccoon-owners', JSON.stringify(
+            { people: data.people, owners: data.owners, favorites: data.favorites }));
     }
 
     function render() {
         document.body.classList.toggle('no-people', data.people.length === 0);
-        if (data.people.indexOf(filter) < 0 && filter !== '-') filter = '';
+        if (data.people.indexOf(filter) < 0 && filter !== '-' && filter !== '*') filter = '';
         chipsEl.innerHTML = '';
         data.people.forEach(function (p) {
             var b = document.createElement('button');
@@ -130,7 +132,11 @@
             });
             sel.classList.toggle('set', !!owner);
             sel.style.setProperty('--owner-color', colorOf(owner) || 'var(--accent)');
-            var visible = !filter || (filter === '-' ? !owner : owner === filter);
+            var fav = data.favorites.indexOf(key) >= 0;
+            var star = card.querySelector('.star');
+            if (star) star.setAttribute('aria-pressed', fav ? 'true' : 'false');
+            var visible = !filter || (filter === '*' ? fav :
+                                      filter === '-' ? !owner : owner === filter);
             card.classList.toggle('hidden', !visible);
             var s = stats[owner || '-'] = stats[owner || '-'] || { books: 0, pages: 0 };
             s.books += 1;
@@ -160,6 +166,16 @@
             render();
         }
     });
+    document.addEventListener('click', function (e) {
+        var star = e.target.closest('.star');
+        if (!star) return;
+        var key = star.closest('.cover-card').getAttribute('data-key');
+        var i = data.favorites.indexOf(key);
+        if (i >= 0) data.favorites.splice(i, 1);
+        else data.favorites.push(key);
+        save();
+        render();
+    });
     document.addEventListener('change', function (e) {
         if (!e.target.classList.contains('owner-select')) return;
         var key = e.target.closest('.cover-card').getAttribute('data-key');
@@ -179,7 +195,8 @@
     var saveBtn = document.querySelector('.save-owners');
     if (saveBtn) {
         saveBtn.addEventListener('click', function () {
-            var blob = new Blob([JSON.stringify({ people: data.people, owners: data.owners }, null, 2)],
+            var blob = new Blob([JSON.stringify(
+                { people: data.people, owners: data.owners, favorites: data.favorites }, null, 2)],
                                 { type: 'application/json' });
             var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);

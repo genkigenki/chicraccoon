@@ -17,7 +17,8 @@ from chicraccoon.enotebackup import EnoteBackup
 # UI strings for the generated web pages (select with --lang)
 STRINGS = {
     'en': {
-        'lang': 'en', 'app': 'My eNote', 'back': 'Back', 'filled_pages': 'Filled pages', 'notebooks': 'Notebooks',
+        'lang': 'en', 'app': 'My eNote', 'back': 'Back', 'filled_pages': 'Filled pages',
+        'favorite': 'Favourite', 'favorites': 'Favourites', 'notebooks': 'Notebooks',
         'notebook': 'Notebook', 'todos': 'ToDo lists', 'todo': 'ToDo list',
         'schedules': 'Calendars', 'schedule': 'Calendar', 'pages': 'pages',
         'page': 'Page', 'home': 'Home', 'prev': 'Previous page',
@@ -42,7 +43,8 @@ STRINGS = {
     },
     'de': {
         'lang': 'de', 'app': 'Mein eNote', 'back': 'Zurück',
-        'filled_pages': 'Ausgefüllte Seiten', 'notebooks': 'Hefte',
+        'filled_pages': 'Ausgefüllte Seiten',
+        'favorite': 'Favorit', 'favorites': 'Favoriten', 'notebooks': 'Hefte',
         'notebook': 'Heft', 'todos': 'ToDo-Listen', 'todo': 'ToDo-Liste',
         'schedules': 'Kalender', 'schedule': 'Kalender', 'pages': 'Seiten',
         'page': 'Seite', 'home': 'Start', 'prev': 'Vorherige Seite',
@@ -578,7 +580,7 @@ class LocalNotebook:
 
         # optional owners.json in the output folder: {"people": [...],
         # "owners": {"n003": "Anna", ...}}; editable from the index page
-        owners = {'people': [], 'owners': {}}
+        owners = {'people': [], 'owners': {}, 'favorites': []}
         if os.path.exists(self._path('owners.json')):
             with open(self._path('owners.json'), encoding='utf-8') as f:
                 owners.update(json.load(f))
