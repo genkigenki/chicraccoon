@@ -42,6 +42,38 @@ STRINGS = {
         'save_hint': 'Assignments are kept in this browser. To keep them '
                      'for good, save owners.json into this folder; it is '
                      'picked up the next time the pages are generated.',
+        'month_fmt': '{month} {year}',
+    },
+    'ja': {
+        'lang': 'ja', 'app': 'わたしの電子ノート', 'back': '戻る',
+        'filled_pages': '書き込みのあるページ',
+        'favorite': 'お気に入り', 'favorites': 'お気に入り',
+        'no_favorites': 'お気に入りのページはまだありません。ページを開いて'
+                        '星をタップしてください。', 'notebooks': 'ノート',
+        'notebook': 'ノート', 'todos': 'ToDoリスト', 'todo': 'ToDoリスト',
+        'schedules': 'スケジュール帳', 'schedule': 'スケジュール帳',
+        'pages': 'ページ', 'page': 'ページ', 'home': 'ホーム',
+        'prev': '前のページ', 'next': '次のページ',
+        'theme': 'ライト/ダーク切り替え', 'show_form': '罫線を表示',
+        'keys': '← → キーまたはスワイプでページ送り',
+        'show_all': 'すべてを1ページで表示', 'latest': '最終更新',
+        'print_page': 'このページを印刷',
+        'print_book': '一覧を印刷（3×4）', 'today': '今日', 'done': '完了',
+        'weekdays': ['月', '火', '水', '木', '金', '土', '日'],
+        'months': ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月',
+                   '9月', '10月', '11月', '12月'],
+        'date_fmt': '%Y/%m/%d', 'empty': 'まだ何もありません。',
+        'owner': '持ち主', 'all': 'すべて', 'unassigned': '未割り当て',
+        'people': '持ち主と保存', 'people_hint': '名前（カンマ区切り）：',
+        'save_owners': 'owners.json をダウンロード',
+        'select': '選択', 'selected': '件選択中', 'assign_to': '割り当て先',
+        'assign': '割り当てる', 'select_visible': '表示中をすべて選択',
+        'clear_selection': '選択を解除',
+        'select_hint': '左上にチェック。Shift+クリックで範囲をまとめて選択できます。',
+        'save_hint': '割り当てはこのブラウザに保存されます。ずっと残すには、'
+                     'owners.json をこのフォルダに保存してください。次回'
+                     'ページを作成するときに読み込まれます。',
+        'month_fmt': '{year}年{month}',
     },
     'de': {
         'lang': 'de', 'app': 'Mein eNote', 'back': 'Zurück',
@@ -76,6 +108,7 @@ STRINGS = {
                      'sie dauerhaft bleibt, owners.json in diesen Ordner '
                      'speichern – sie wird beim nächsten Erzeugen '
                      'übernommen.',
+        'month_fmt': '{month} {year}',
     },
 }
 
@@ -559,7 +592,8 @@ class LocalNotebook:
                             'touched': bool(page and page['touched'])
                         })
                     weeks.append(row)
-                months.append({'name': '{} {}'.format(t['months'][m - 1], y),
+                months.append({'name': t['month_fmt'].format(
+                                   month=t['months'][m - 1], year=y),
                                'weeks': weeks})
                 y, m = (y + 1, 1) if m == 12 else (y, m + 1)
 
@@ -672,6 +706,13 @@ class LocalNotebook:
         self.update_images(backup)
         self.regenerate_web(lang)
 
+def sync(notebook_dir, backup_path, lang='en'):
+    """Convert/refresh <notebook_dir> from an enote.bkup (only changed pages
+    are converted again)."""
+    with LocalNotebook(notebook_dir) as notebook:
+        with EnoteBackup(backup_path) as backup:
+            notebook.update(backup, lang)
+
 def main():
     args = sys.argv[1:]
     lang = 'en'
@@ -686,10 +727,7 @@ def main():
         return
 
     notebook_dir, backup_path = args
-
-    with LocalNotebook(notebook_dir) as notebook:
-        with EnoteBackup(backup_path) as backup:
-            notebook.update(backup, lang)
+    sync(notebook_dir, backup_path, lang)
 
 if __name__ == '__main__':
     main()
