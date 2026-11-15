@@ -17,7 +17,7 @@ from chicraccoon.enotebackup import EnoteBackup
 # UI strings for the generated web pages (select with --lang)
 STRINGS = {
     'en': {
-        'lang': 'en', 'app': 'My eNote', 'back': 'Back', 'notebooks': 'Notebooks',
+        'lang': 'en', 'app': 'My eNote', 'back': 'Back', 'filled_pages': 'Filled pages', 'notebooks': 'Notebooks',
         'notebook': 'Notebook', 'todos': 'ToDo lists', 'todo': 'ToDo list',
         'schedules': 'Calendars', 'schedule': 'Calendar', 'pages': 'pages',
         'page': 'Page', 'home': 'Home', 'prev': 'Previous page',
@@ -41,7 +41,8 @@ STRINGS = {
                      'picked up the next time the pages are generated.',
     },
     'de': {
-        'lang': 'de', 'app': 'Mein eNote', 'back': 'Zurück', 'notebooks': 'Hefte',
+        'lang': 'de', 'app': 'Mein eNote', 'back': 'Zurück',
+        'filled_pages': 'Ausgefüllte Seiten', 'notebooks': 'Hefte',
         'notebook': 'Heft', 'todos': 'ToDo-Listen', 'todo': 'ToDo-Liste',
         'schedules': 'Kalender', 'schedule': 'Kalender', 'pages': 'Seiten',
         'page': 'Seite', 'home': 'Start', 'prev': 'Vorherige Seite',
@@ -526,18 +527,18 @@ class LocalNotebook:
             date_range = '{} – {}'.format(
                 fmt_date(schedule['start_date']),
                 fmt_date(schedule['end_date']))
-            write(os.path.join(schedule_dirname(id_), 'index.html'),
-                  schedule_template, base_dir='../', kind='schedule',
-                  title=title, crumbs=crumbs[:1] + [{'label': title}],
-                  up_link='../index.html#schedules', months=months,
-                  range=date_range)
-
+            filled = []
             for i, (page_id, page) in enumerate(page_objects):
-                layers = layer_list([sch_form_filename(page_id, id_)] +
-                    existing_layers(
-                        lambda l: sch_page_imagename(page_id, id_, l)))
+                ink = existing_layers(
+                    lambda l: sch_page_imagename(page_id, id_, l))
+                layers = layer_list([sch_form_filename(page_id, id_)] + ink)
                 label = '{} – {}'.format(fmt_date(page['start_date']),
                                               fmt_date(page['end_date']))
+                if ink:
+                    # calendar pages have no thumbnails: reuse full images
+                    filled.append({'layers': layers, 'label': label,
+                                   'link': sch_page_filename(page_id, id_),
+                                   'sort': page['start_date']})
                 write(sch_page_filename(page_id, id_), page_template,
                       base_dir='../', kind='schedule', title=title,
                       crumbs=crumbs + [{'label': label}], up_link='index.html',
@@ -547,6 +548,13 @@ class LocalNotebook:
                           if i > 0 else None,
                       next_link=sch_page_filename(page_objects[i + 1][0], id_)
                           if i < len(page_objects) - 1 else None)
+
+            filled.sort(key=lambda x: x['sort'])
+            write(os.path.join(schedule_dirname(id_), 'index.html'),
+                  schedule_template, base_dir='../', kind='schedule',
+                  title=title, crumbs=crumbs[:1] + [{'label': title}],
+                  up_link='../index.html#schedules', months=months,
+                  range=date_range, filled=filled)
 
             touched = sum(1 for _, p in page_objects if p['touched'])
             schedules.append({

@@ -7,6 +7,24 @@
         </div>
     </section>
 
+    {% if filled %}
+    <section class="shelf filled" id="filled">
+        <h2>{{ t.filled_pages }} <span class="count">{{ filled|length }}</span></h2>
+        <div class="grid thumbs">
+            {% for p in filled %}
+            <a class="card thumb-card" href="{{ base_dir }}{{ p.link }}">
+                <span class="paper sheet">
+                    {% for l in p.layers %}
+                    <img class="layer {{ l.cls }}" src="{{ base_dir }}{{ l.src }}" alt="" loading="lazy">
+                    {% endfor %}
+                </span>
+                <span class="meta"><span class="num">{{ p.label }}</span></span>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <div class="months">
         {% for month in months %}
         <section class="card month">
@@ -34,4 +52,5 @@
         </section>
         {% endfor %}
     </div>
+
 {% endblock %}

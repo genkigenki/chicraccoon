@@ -335,3 +335,8 @@ a.day:hover { background: var(--accent-soft); }
 .top-stats + .theme-toggle { margin-left: 0; }
 @media (max-width: 1000px) { .top-stats { display: none; } .theme-toggle { margin-left: auto; } }
 @media (max-width: 640px) { .brand-name { display: none; } }
+
+.shelf.filled { margin: 0 0 28px; }
+
+/* anchor jumps (#notebooks etc.) land below the sticky top bar */
+html { scroll-padding-top: 76px; scroll-behavior: smooth; }
