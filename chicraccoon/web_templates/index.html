@@ -2,12 +2,6 @@
 {% block body %}
     <section class="hero">
         <h1>{{ t.app }}</h1>
-        <p class="stats">
-            {% for s in sections %}
-            <a class="chip" href="#{{ s.id }}"><b>{{ s.entries|length }}</b> {{ s.title }}</a>
-            {% endfor %}
-            <span class="chip plain"><b>{{ total_pages }}</b> {{ t.pages }}</span>
-        </p>
         {% if latest %}<p class="muted">{{ t.latest }}: {{ latest }}</p>{% endif %}
     </section>
 

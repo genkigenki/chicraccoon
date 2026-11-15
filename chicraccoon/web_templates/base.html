@@ -13,10 +13,19 @@
 </head>
 <body class="kind-{{ kind }}">
     <header class="topbar">
-        <a class="brand" href="{{ base_dir }}index.html"><span class="logo" aria-hidden="true">✎</span>{{ t.app }}</a>
+        {% if up_link %}
+        <a class="back-btn" href="{{ up_link }}" title="{{ t.back }}" aria-label="{{ t.back }}">←</a>
+        {% endif %}
+        <a class="brand" href="{{ base_dir }}index.html"><span class="logo" aria-hidden="true">✎</span><span class="brand-name">{{ t.app }}</span></a>
         <nav class="crumbs" aria-label="breadcrumb">
             {% for c in crumbs %}
-            <span class="sep" aria-hidden="true">›</span><a href="{{ c.link }}">{{ c.label }}</a>
+            <span class="sep" aria-hidden="true">›</span>
+            {% if c.link and not loop.last %}<a href="{{ c.link }}">{{ c.label }}</a>{% else %}<span class="current" aria-current="page">{{ c.label }}</span>{% endif %}
+            {% endfor %}
+        </nav>
+        <nav class="top-stats" aria-label="{{ t.app }}">
+            {% for s in stats %}
+            {% if s.id %}<a class="stat" href="{{ base_dir }}index.html#{{ s.id }}"><b>{{ s.count }}</b> {{ s.label }}</a>{% else %}<span class="stat"><b>{{ s.count }}</b> {{ s.label }}</span>{% endif %}
             {% endfor %}
         </nav>
         <button class="theme-toggle" type="button" title="{{ t.theme }}" aria-label="{{ t.theme }}">◐</button>

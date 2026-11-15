@@ -17,7 +17,7 @@ from chicraccoon.enotebackup import EnoteBackup
 # UI strings for the generated web pages (select with --lang)
 STRINGS = {
     'en': {
-        'lang': 'en', 'app': 'My eNote', 'notebooks': 'Notebooks',
+        'lang': 'en', 'app': 'My eNote', 'back': 'Back', 'notebooks': 'Notebooks',
         'notebook': 'Notebook', 'todos': 'ToDo lists', 'todo': 'ToDo list',
         'schedules': 'Calendars', 'schedule': 'Calendar', 'pages': 'pages',
         'page': 'Page', 'home': 'Home', 'prev': 'Previous page',
@@ -41,7 +41,7 @@ STRINGS = {
                      'picked up the next time the pages are generated.',
     },
     'de': {
-        'lang': 'de', 'app': 'Mein eNote', 'notebooks': 'Hefte',
+        'lang': 'de', 'app': 'Mein eNote', 'back': 'Zurück', 'notebooks': 'Hefte',
         'notebook': 'Heft', 'todos': 'ToDo-Listen', 'todo': 'ToDo-Liste',
         'schedules': 'Kalender', 'schedule': 'Kalender', 'pages': 'Seiten',
         'page': 'Seite', 'home': 'Start', 'prev': 'Vorherige Seite',
@@ -387,6 +387,20 @@ class LocalNotebook:
             lstrip_blocks=True
         )
         env.globals['t'] = t
+        valid = lambda pages, data: [p for p in pages if p in data]
+        env.globals['stats'] = [
+            {'id': 'notebooks', 'label': t['notebooks'],
+             'count': len(self.d['notebooks'])},
+            {'id': 'todos', 'label': t['todos'], 'count': len(self.d['todos'])},
+            {'id': 'schedules', 'label': t['schedules'],
+             'count': sum(1 for x in self.d['schedules'].values()
+                          if valid(x['pages'], self.d['sch_pages']))},
+            {'id': None, 'label': t['pages'],
+             'count': sum(len(valid(x['pages'], self.d['pages']))
+                          for x in self.d['notebooks'].values()) +
+                      sum(len(valid(x['pages'], self.d['todo_pages']))
+                          for x in self.d['todos'].values())},
+        ]
         page_template = env.get_template('page.html')
         book_template = env.get_template('book.html')
 
@@ -416,11 +430,11 @@ class LocalNotebook:
                     if done:
                         badge = '✓ {}'.format(done)
 
+                label = '{} {} / {}'.format(t['page'], i + 1, len(page_ids))
                 write(page_fn(page_id, id_), page_template,
                       base_dir='../', kind=kind, title=title,
-                      crumbs=crumbs, layers=layers,
-                      label='{} {} / {}'.format(t['page'], i + 1,
-                                                len(page_ids)),
+                      crumbs=crumbs + [{'label': label}], up_link='index.html',
+                      layers=layers, label=label,
                       progress=100.0 * (i + 1) / len(page_ids),
                       prev_link=page_fn(page_ids[i - 1], id_)
                           if i > 0 else None,
@@ -430,7 +444,9 @@ class LocalNotebook:
                               'num': i + 1, 'badge': badge})
 
             write(os.path.join(dirname(id_), 'index.html'), book_template,
-                  base_dir='../', kind=kind, title=title, crumbs=crumbs[:1],
+                  base_dir='../', kind=kind, title=title,
+                  crumbs=crumbs[:1] + [{'label': title}],
+                  up_link='../index.html#' + kind + 's',
                   cover=cover, pages=pages, date=fmt_date(modified))
             return {'link': '{}/index.html'.format(dirname(id_)),
                     'key': dirname(id_), 'cover': cover, 'title': title,
@@ -512,19 +528,20 @@ class LocalNotebook:
                 fmt_date(schedule['end_date']))
             write(os.path.join(schedule_dirname(id_), 'index.html'),
                   schedule_template, base_dir='../', kind='schedule',
-                  title=title, crumbs=crumbs[:1], months=months,
+                  title=title, crumbs=crumbs[:1] + [{'label': title}],
+                  up_link='../index.html#schedules', months=months,
                   range=date_range)
 
             for i, (page_id, page) in enumerate(page_objects):
                 layers = layer_list([sch_form_filename(page_id, id_)] +
                     existing_layers(
                         lambda l: sch_page_imagename(page_id, id_, l)))
+                label = '{} – {}'.format(fmt_date(page['start_date']),
+                                              fmt_date(page['end_date']))
                 write(sch_page_filename(page_id, id_), page_template,
                       base_dir='../', kind='schedule', title=title,
-                      crumbs=crumbs, layers=layers,
-                      label='{} – {}'.format(
-                          fmt_date(page['start_date']),
-                          fmt_date(page['end_date'])),
+                      crumbs=crumbs + [{'label': label}], up_link='index.html',
+                      layers=layers, label=label,
                       progress=100.0 * (i + 1) / len(page_objects),
                       prev_link=sch_page_filename(page_objects[i - 1][0], id_)
                           if i > 0 else None,
@@ -561,6 +578,7 @@ class LocalNotebook:
             '</', '<\\/')
         write('index.html', env.get_template('index.html'),
               base_dir='', kind='home', title=t['app'], crumbs=[],
+              up_link=None,
               sections=sections,
               total_pages=sum(x['count'] for x in notebooks + todos),
               latest=fmt_date(latest), owners_json=owners_json)
