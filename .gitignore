@@ -2,3 +2,14 @@ __pycache__/
 *.pyc
 build/
 *.egg-info/
+
+# personal data: never commit backups, generated pages or exports
+*.bkup
+*_html/
+*_PDF/
+*.pdf
+*.log
+owners.json
+titles.json
+summaries.json
+.chicraccoon_gui.json
