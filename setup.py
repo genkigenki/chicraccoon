@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='chicraccoon',
 
-    version='0.1.0',
+    version='0.2.0',
 
     description='A utility for managing backup files from Sharp electronic notebooks',
 
