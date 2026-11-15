@@ -33,6 +33,8 @@ setup(
 
     install_requires=['Pillow', 'Jinja2'],
 
+    python_requires='>=3.7',
+
     package_data={
         'chicraccoon': ['web_templates/*', 'web_static/*'],
     },
@@ -41,6 +43,10 @@ setup(
         'console_scripts': [
             'chicraccoon_cli=chicraccoon.cli:main',
             'chicraccoon_sync=chicraccoon.sync:main',
+            'chicraccoon_pdf=chicraccoon.export_pdf:main',
+        ],
+        'gui_scripts': [
+            'chicraccoon_gui=chicraccoon.gui:main',
         ],
     },
 )
