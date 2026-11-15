@@ -97,17 +97,34 @@
             if (txt) txt.textContent = shown ? shown + ' ★' : '';
         }
     };
+    /* Shift+click on a star sets/clears every star between it and the
+       previously clicked one (like ticking a range of books) */
+    var lastStar = null;
+    document.addEventListener('mousedown', function (e) {
+        if (e.shiftKey && e.target.closest('.star[data-page]')) e.preventDefault(); // no text selection
+    });
     document.addEventListener('click', function (e) {
         var b = e.target.closest('.star[data-page]');
         if (!b) return;
         e.preventDefault();
         var favs = getFavs(), key = b.getAttribute('data-page');
-        var i = favs.indexOf(key);
-        if (i >= 0) favs.splice(i, 1); else favs.push(key);
+        var on = favs.indexOf(key) < 0;   // new state of the clicked star
+        var targets = [b];
+        if (e.shiftKey && lastStar && lastStar !== b && document.contains(lastStar)) {
+            var all = Array.prototype.slice.call(document.querySelectorAll('.star[data-page]'));
+            var a = all.indexOf(lastStar), z = all.indexOf(b);
+            if (a >= 0 && z >= 0) targets = all.slice(Math.min(a, z), Math.max(a, z) + 1);
+        }
+        targets.forEach(function (t) {
+            var k = t.getAttribute('data-page'), i = favs.indexOf(k);
+            if (on && i < 0) favs.push(k);
+            if (!on && i >= 0) favs.splice(i, 1);
+        });
+        lastStar = b;
         store('chicraccoon-favs', JSON.stringify(favs));
         /* on the favourites page, keep an un-starred page visible until reload */
         if (document.querySelector('.fav-item')) {
-            b.setAttribute('aria-pressed', i >= 0 ? 'false' : 'true');
+            targets.forEach(function (t) { t.setAttribute('aria-pressed', on ? 'true' : 'false'); });
             var c = document.querySelector('.fav-count');
             if (c) c.textContent = favs.length || '';
         } else {
