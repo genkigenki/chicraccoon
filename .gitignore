@@ -13,3 +13,6 @@ owners.json
 titles.json
 summaries.json
 .chicraccoon_gui.json
+
+# generated demo website
+demo/demo_site/
