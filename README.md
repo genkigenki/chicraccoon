@@ -11,11 +11,11 @@ Runs on your own computer, nothing is uploaded. Interface in **English · Deutsc
 
 ## Why this exists
 
-My first e-note, a **WG-S20**, was a present from a physics professor from Italy who lives in Yokohama.
-I loved it so much that I bought a **WG-PN1** and filled dozens of notebooks, ToDo lists and calendars
-until recently. Sharp's own utility can only export single pages, so I extended
-[Aleksejs Popovs' chicraccoon](https://github.com/aleksejspopovs/chicraccoon) until all of it was
-readable, printable and safe on my computer.
+My first e-note, a **WG-S20**, was a present from a great physics professor from Italy who lives in
+Yokohama. I liked it a lot, bought a **WG-PN1** and filled notebooks and more. Sharp's own utility was
+limited; [Aleksejs Popovs' chicraccoon](https://github.com/aleksejspopovs/chicraccoon) already had most
+of it, but didn't work with the PN1. I fixed that and added a few UI improvements here and there
+(marking favourites, printing, PDFs, three languages, …).
 
 ## Quick start
 
